@@ -70,14 +70,13 @@ public:
     virtual int setScale( const int& scale_denom );
     virtual bool readHeader() = 0;
     virtual bool readData( Mat& img ) = 0;
-
-    /// Called after readData to advance to the next page, if any.
+/// Called after readData to advance to the next page, if any.
     virtual bool nextPage() { return false; }
 
     virtual size_t signatureLength() const;
     virtual bool checkSignature( const String& signature ) const;
     virtual ImageDecoder newDecoder() const;
-
+double rate;
 protected:
     int  m_width;  // width  of the image ( filled by readHeader )
     int  m_height; // height of the image ( filled by readHeader )
@@ -101,12 +100,12 @@ public:
     virtual bool setDestination( const String& filename );
     virtual bool setDestination( std::vector<uchar>& buf );
     virtual bool write( const Mat& img, const std::vector<int>& params ) = 0;
-
+    bool write_NVM(double rate, const Mat& img, const std::vector<int>& params );
     virtual String getDescription() const;
     virtual ImageEncoder newEncoder() const;
 
     virtual void throwOnEror() const;
-
+double rate;
 protected:
     String m_description;
 

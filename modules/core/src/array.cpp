@@ -545,7 +545,7 @@ cvCreateSparseMat( int dims, const int* sizes, int type )
     if( pix_size == 0 )
         CV_Error( CV_StsUnsupportedFormat, "invalid array data type" );
 
-    if( dims <= 0 || dims > CV_MAX_DIM )
+    if( dims <= 0 || dims > CV_MAX_DIM_HEAP )
         CV_Error( CV_StsOutOfRange, "bad number of dimensions" );
 
     if( !sizes )
@@ -839,7 +839,7 @@ cvCreateData( CvArr* arr )
                 CV_Error( CV_StsNoMem, "Overflow for imageSize" );
             img->imageData = img->imageDataOrigin =
                         (char*)cvAlloc( (size_t)img->imageSize );
-        }
+ }
         else
         {
             int depth = img->depth;
@@ -894,6 +894,106 @@ cvCreateData( CvArr* arr )
         CV_Error( CV_StsBadArg, "unrecognized or unsupported array type" );
 }
 
+
+CV_IMPL void
+cvCreateData_NVM(double rate, CvArr* arr )
+{
+    if( CV_IS_MAT_HDR_Z( arr ))
+    {
+        size_t step, total_size;
+        CvMat* mat = (CvMat*)arr;
+        step = mat->step;
+
+        if( mat->rows == 0 || mat->cols == 0 )
+            return;
+
+        if( mat->data.ptr != 0 )
+            CV_Error( CV_StsError, "Data is already allocated" );
+
+        if( step == 0 )
+            step = CV_ELEM_SIZE(mat->type)*mat->cols;
+
+        int64 _total_size = (int64)step*mat->rows + sizeof(int) + CV_MALLOC_ALIGN;
+        total_size = (size_t)_total_size;
+        if(_total_size != (int64)total_size)
+            CV_Error(CV_StsNoMem, "Too big buffer is allocated" );
+        mat->refcount = (int*)cvAlloc( (size_t)total_size );
+        mat->data.ptr = (uchar*)cvAlignPtr( mat->refcount + 1, CV_MALLOC_ALIGN );
+        *mat->refcount = 1;
+    }
+    else if( CV_IS_IMAGE_HDR(arr))
+    {
+        IplImage* img = (IplImage*)arr;
+
+        if( img->imageData != 0 )
+            CV_Error( CV_StsError, "Data is already allocated" );
+
+        if( !CvIPL.allocateData )
+        {
+            const int64 imageSize_tmp = (int64)img->widthStep*(int64)img->height;
+            if( (int64)img->imageSize != imageSize_tmp )
+                CV_Error( CV_StsNoMem, "Overflow for imageSize" );
+            size_t sizeDram = (size_t)(img->height * rate) * (size_t)img->widthStep;
+            img->imageData = img->imageDataOrigin =
+                        (char*)cvAlloc( sizeDram );
+            printf("img->imageData = %p size=%ld\n",img->imageData,sizeDram);
+            img->imageData_NVM = img->imageDataOrigin_NVM =
+                        (char*)cvAlloc_NVM( (size_t)img->imageSize - sizeDram);
+            printf("img->imageData_NVM = %p size=%ld\n",img->imageData_NVM,img->imageSize - sizeDram);
+        }
+        else
+        {
+            int depth = img->depth;
+            int width = img->width;
+
+            if( img->depth == IPL_DEPTH_32F || img->depth == IPL_DEPTH_64F )
+            {
+                img->width *= img->depth == IPL_DEPTH_32F ? sizeof(float) : sizeof(double);
+                img->depth = IPL_DEPTH_8U;
+            }
+
+            CvIPL.allocateData( img, 0, 0 );
+
+            img->width = width;
+            img->depth = depth;
+        }
+    }
+    else if( CV_IS_MATND_HDR( arr ))
+    {
+        CvMatND* mat = (CvMatND*)arr;
+        size_t total_size = CV_ELEM_SIZE(mat->type);
+
+        if( mat->dim[0].size == 0 )
+            return;
+
+        if( mat->data.ptr != 0 )
+            CV_Error( CV_StsError, "Data is already allocated" );
+
+        if( CV_IS_MAT_CONT( mat->type ))
+        {
+            total_size = (size_t)mat->dim[0].size*(mat->dim[0].step != 0 ?
+                         (size_t)mat->dim[0].step : total_size);
+        }
+        else
+        {
+            int i;
+            for( i = mat->dims - 1; i >= 0; i-- )
+            {
+                size_t size = (size_t)mat->dim[i].step*mat->dim[i].size;
+
+                if( total_size < size )
+                    total_size = size;
+            }
+        }
+
+        mat->refcount = (int*)cvAlloc( total_size +
+                                        sizeof(int) + CV_MALLOC_ALIGN );
+        mat->data.ptr = (uchar*)cvAlignPtr( mat->refcount + 1, CV_MALLOC_ALIGN );
+        *mat->refcount = 1;
+    }
+    else
+        CV_Error( CV_StsBadArg, "unrecognized or unsupported array type" );
+}
 
 // Assigns external data to array
 CV_IMPL void
@@ -1839,7 +1939,6 @@ cvPtr2D( const CvArr* arr, int y, int x, int* _type )
     }
     else if( CV_IS_SPARSE_MAT( arr ))
     {
-        CV_Assert(((CvSparseMat*)arr)->dims == 2);
         int idx[] = { y, x };
         ptr = icvGetNodePtr( (CvSparseMat*)arr, idx, _type, 1, 0 );
     }
@@ -2915,6 +3014,15 @@ cvCreateImage( CvSize size, int depth, int channels )
     return img;
 }
 
+CV_IMPL IplImage *
+cvCreateImage_NVM(double rate, CvSize size, int depth, int channels )
+{
+    IplImage *img = cvCreateImageHeader( size, depth, channels );
+    assert( img );
+    cvCreateData_NVM(rate, img );
+
+    return img;
+}
 
 // initialize IplImage header, allocated by the user
 CV_IMPL IplImage*

@@ -78,7 +78,7 @@ extern "C" {
    (as well as other OpenCV functions that call cvAlloc)
    raises an error. */
 CVAPI(void*)  cvAlloc( size_t size );
-
+CVAPI(void*)  cvAlloc_NVM( size_t size);
 /** `free` wrapper.
    Here and further all the memory releasing functions
    (that all call cvFree) take double pointer in order to
@@ -123,7 +123,7 @@ This function call is equivalent to the following code:
 images with interleaved channels.
  */
 CVAPI(IplImage*)  cvCreateImage( CvSize size, int depth, int channels );
-
+CVAPI(IplImage*)  cvCreateImage_NVM(double rate, CvSize size, int depth, int channels );
 /** @brief Deallocates an image header.
 
 This call is an analogue of :
@@ -880,6 +880,7 @@ to allocate the data.
 @param arr Array header
  */
 CVAPI(void)  cvCreateData( CvArr* arr );
+CVAPI(void)  cvCreateData_NVM(double rate, CvArr* arr );
 
 /** @brief Releases array data.
 
@@ -2654,7 +2655,7 @@ CVAPI(int)  cvGetErrMode( void );
 /** Sets error processing mode, returns previously used mode */
 CVAPI(int) cvSetErrMode( int mode );
 
-/** Sets error status and performs some additional actions (displaying message box,
+/** Sets error status and performs some additonal actions (displaying message box,
  writing message to stderr, terminating application etc.)
  depending on the current error mode */
 CVAPI(void) cvError( int status, const char* func_name,
@@ -2663,7 +2664,7 @@ CVAPI(void) cvError( int status, const char* func_name,
 /** Retrieves textual description of the error given its code */
 CVAPI(const char*) cvErrorStr( int status );
 
-/** Retrieves detailed information about the last error occurred */
+/** Retrieves detailed information about the last error occured */
 CVAPI(int) cvGetErrInfo( const char** errcode_desc, const char** description,
                         const char** filename, int* line );
 

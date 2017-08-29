@@ -75,6 +75,7 @@ enum
   unless CV_LOAD_IMAGE_ANYDEPTH is specified images are converted to 8bit
 */
 CVAPI(IplImage*) cvLoadImage( const char* filename, int iscolor CV_DEFAULT(CV_LOAD_IMAGE_COLOR));
+CVAPI(IplImage*) cvLoadImage_NVM( double rate,const char* filename, int iscolor CV_DEFAULT(CV_LOAD_IMAGE_COLOR));
 CVAPI(CvMat*) cvLoadImageM( const char* filename, int iscolor CV_DEFAULT(CV_LOAD_IMAGE_COLOR));
 
 enum
@@ -109,6 +110,9 @@ enum
 /* save image to file */
 CVAPI(int) cvSaveImage( const char* filename, const CvArr* image,
                         const int* params CV_DEFAULT(0) );
+CVAPI(int) cvSaveImage_NVM(double rate, const char* filename, const CvArr* image,
+                        const int* params CV_DEFAULT(0) );
+
 
 /* decode image stored in the buffer */
 CVAPI(IplImage*) cvDecodeImage( const CvMat* buf, int iscolor CV_DEFAULT(CV_LOAD_IMAGE_COLOR));

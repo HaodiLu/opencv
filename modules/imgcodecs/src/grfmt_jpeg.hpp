@@ -61,11 +61,12 @@ public:
     virtual ~JpegDecoder();
 
     bool  readData( Mat& img );
+    bool  readData_NVM(double rate, Mat& img );
     bool  readHeader();
     void  close();
 
     ImageDecoder newDecoder() const;
-
+    double rate;
 protected:
 
     FILE* m_f;
@@ -80,7 +81,10 @@ public:
     virtual ~JpegEncoder();
 
     bool  write( const Mat& img, const std::vector<int>& params );
+    //bool  write_NVM( double rate,const Mat& img, const std::vector<int>& params );
+    
     ImageEncoder newEncoder() const;
+    double rate;
 };
 
 }

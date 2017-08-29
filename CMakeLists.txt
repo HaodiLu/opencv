@@ -7,6 +7,7 @@
 # ----------------------------------------------------------------------------
 
 # Disable in-source builds to prevent source tree corruption.
+message(FATAL_ERROR  ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR})
 if(" ${CMAKE_SOURCE_DIR}" STREQUAL " ${CMAKE_BINARY_DIR}")
   message(FATAL_ERROR "
 FATAL: In-source builds are not allowed.
